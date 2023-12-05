@@ -55,7 +55,7 @@ Nom VARCHAR(10) REFERENCES ENTITE PRIMARY KEY,
 ArgentDrop INTEGER,
 FOREIGN KEY (Nom) REFERENCES ENTITE(Nom));
 
-/* # ========================= DEBUT TRIGGERS ========================= */
+/* ========================= DEBUT TRIGGERS ========================= */
 
 CREATE TRIGGER AchatObjet
 BEFORE UPDATE ON ObjetAchete
@@ -89,7 +89,7 @@ BEGIN
 
 END;
 */
-/* # ========================= FIN TRIGGERS  ========================= */
+/* ========================= FIN TRIGGERS  ========================= */
 
 INSERT INTO SKILL
 VALUES('Attaque Basique','Offensif',1),
