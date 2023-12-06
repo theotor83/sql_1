@@ -53,6 +53,7 @@ FOREIGN KEY (NomSkill) REFERENCES SKILL(NomSkill));
 CREATE TABLE Monstre(
 Nom VARCHAR(10) REFERENCES ENTITE PRIMARY KEY,
 ArgentDrop INTEGER,
+IdMontre INTEGER,
 FOREIGN KEY (Nom) REFERENCES ENTITE(Nom));
 
 /* ========================= DEBUT TRIGGERS ========================= */
