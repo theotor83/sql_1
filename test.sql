@@ -58,38 +58,33 @@ FOREIGN KEY (Nom) REFERENCES ENTITE(Nom));
 
 /* ========================= DEBUT TRIGGERS ========================= */
 
+/* J'ai mis 2 triggers différents car je galère trop à tout faire d'un coup, tant pis. J'ai fait en sorte qu'on puisse acheter plusieurs objets d'un coup et qu'on puisse aussi les vendre,
+dans mes tests tout a l'air de fonctionner (sauf une fois il voulait vraiment pas que j'aille au dessus de 5 objets, je sais pas pourquoi mais ça me le fait pas), mais pour moi c'est terminé
+et je sais pas pourquoi c'est aussi dur de faire un truc aussi simple */
+
+DROP TRIGGER if EXISTS AchatObjet;
 CREATE TRIGGER AchatObjet
 BEFORE UPDATE ON ObjetAchete
-
-WHEN (SELECT ArgentJoueur - (SELECT CoutObjet FROM OBJET WHERE NomObjet = new.NomObjet) FROM JOUEUR WHERE NomJoueur = 'Player') >= 0
-
-BEGIN 
-	UPDATE ObjetAchete 
-	SET qte = old.qte + 1 
-	WHERE ObjetAchete.NomObjet = new.NomObjet;
-	
-	UPDATE JOUEUR
-	SET ArgentJoueur = ArgentJoueur - (SELECT CoutObjet FROM OBJET WHERE NomObjet = new.NomObjet);
-	
+WHEN (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = 'Player') >= ((SELECT CoutObjet FROM OBJET WHERE NomObjet = NEW.NomObjet) * (NEW.qte - OLD.qte))
+BEGIN
+   UPDATE ObjetAchete
+   SET qte = qte + NEW.qte
+   WHERE NomObjet = NEW.NomObjet;
+   UPDATE JOUEUR
+   SET ArgentJoueur = (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = 'Player') - ((SELECT CoutObjet FROM OBJET WHERE NomObjet = NEW.NomObjet) * (NEW.qte - OLD.qte));
 END;
 
-/*
-
-CREATE TRIGGER AchatPersonnage
-BEFORE UPDATE ON PersoPossede
-
-WHEN (SELECT ArgentJoueur - (SELECT CoutAllie FROM MagazinPerso WHERE Nom = new.Nom) FROM JOUEUR WHERE NomJoueur = 'Player') >= 0
-
-BEGIN 
-	UPDATE PersoPossede 
-	SET qte = old.qte + 1 
-	WHERE ObjetAchete.NomObjet = new.NomObjet;
-
-	UPDATE JOUEUR
-	SET ArgentJoueur = ArgentJoueur - (SELECT CoutAllie FROM MagazinPerso WHERE Nom = new.Nom);
-
+DROP TRIGGER IF EXISTS AchatObjetRefuse;
+CREATE TRIGGER AchatObjetRefuse
+BEFORE UPDATE ON ObjetAchete
+WHEN (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = 'Player') < ((SELECT CoutObjet FROM OBJET WHERE NomObjet = NEW.NomObjet) * (NEW.qte - OLD.qte))
+BEGIN
+	SELECT CASE
+		WHEN NEW.qte <> OLD.qte THEN
+			RAISE (ABORT,"Vous n'avez pas assez d'argent.")
+	END;
 END;
-*/
+
 /* ========================= FIN TRIGGERS  ========================= */
 
 INSERT INTO SKILL
