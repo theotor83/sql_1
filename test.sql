@@ -109,13 +109,15 @@ BEGIN
 	END;
 END;
 
-DROP TRIGGER IF EXISTS AchatPersoRefuse;
-CREATE TRIGGER AchatPersoRefuse
-BEFORE INSERT ON PersoPossede
-WHEN (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = NEW.NomJoueur) < (SELECT CoutAllie FROM MagazinPerso WHERE NomJoueur = NEW.NomJoueur AND Nom = NEW.Nom)
+DROP TRIGGER IF EXISTS AchatObjetRefuseCombat;
+CREATE TRIGGER AchatObjetRefuseCombat
+BEFORE UPDATE ON ObjetAchete
+WHEN (SELECT COUNT(*) FROM COMBAT) > 0
 BEGIN
-	SELECT RAISE(ABORT,"Vous n'avez pas assez d'argent.");
+	SELECT RAISE (ABORT,"Vous ne pouvez pas acheter en combat.");
 END;
+
+
 
 DROP TRIGGER IF EXISTS AchatPerso;
 CREATE TRIGGER AchatPerso
@@ -128,20 +130,21 @@ BEGIN
                     (SELECT CoutAllie FROM MagazinPerso WHERE NomJoueur = NEW.NomJoueur AND Nom = NEW.Nom);
 END;
 
-DROP TRIGGER IF EXISTS DebutCombat;
-CREATE TRIGGER DebutCombat
-AFTER UPDATE ON ENTITE
-WHEN (SELECT COUNT(*) FROM ENTITE WHERE LettreType = 'M' AND PVMax = PVactuels) > 0
+DROP TRIGGER IF EXISTS AchatPersoRefuse;
+CREATE TRIGGER AchatPersoRefuse
+BEFORE INSERT ON PersoPossede
+WHEN (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = NEW.NomJoueur) < (SELECT CoutAllie FROM MagazinPerso WHERE NomJoueur = NEW.NomJoueur AND Nom = NEW.Nom)
 BEGIN
- UPDATE ENTITE
- SET PVactuels = PVMax
- WHERE Nom IN(
-   SELECT Nom
-   FROM PersoPossede);
+	SELECT RAISE(ABORT,"Vous n'avez pas assez d'argent.");
 END;
-/* Le trigger en haut permet de débuter un combat, en assignant les PV Max en valeur de PV actuels pour chaque allié que le joueur possède, dès que un monstre a PV Max = PV actuels. (tout en bas)
-Je sais pas si ça peut créer des problèmes ensuite, je suppose que oui mais on verra ça plus tard avec les combats. Normalement si le joueur attaque directement y a pas de problème.*/
 
+DROP TRIGGER IF EXISTS AchatPersoRefuseCombat;
+CREATE TRIGGER AchatPersoRefuseCombat
+BEFORE INSERT ON PersoPossede
+WHEN (SELECT COUNT(*) FROM COMBAT) > 0
+BEGIN
+	SELECT RAISE (ABORT,"Vous ne pouvez pas acheter en combat.");
+END;
 
 DROP TRIGGER IF EXISTS DebutCombatV2;
 CREATE TRIGGER DebutCombatV2
@@ -220,11 +223,32 @@ BEGIN
     END;
 END;
 
-/*Reste à faire : - il faut qu'il y ait un trigger qui réagisse à l'update ou à l'insert dans ChoixSkill pour savoir quoi faire ensuite.
-				  - il faut pleins de triggers pour vérifier si un combat est finie ou pas. Attention : A cause des triggers en bordel, quand un combat débute, il dit directement qu'il est fini 
-				  car il vérifie si le combat est fini avant d'update en changeant la vie des alliés. Pour fixer ça, je pense qu'il faudrait faire en sorte que les entités commencent le combat
-				  avec PVactuels = PVmax +1, donc un allié aura par exemple 201 PV au début. Si PVactuels > PVmax -> alors il ne faut pas finir le combat, sinon -> le combat peut se finir.*/
-				  
+
+DROP TRIGGER IF EXISTS VictoireV2;
+CREATE TRIGGER VictoireV2
+AFTER UPDATE ON COMBAT
+BEGIN
+   UPDATE JOUEUR
+   SET ArgentJoueur = ArgentJoueur + (SELECT ArgentDrop FROM Monstre WHERE Nom = NEW.Nom)
+   WHERE (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'M' AND PVactuels = 0) = (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'M');
+END;
+
+DROP TRIGGER IF EXISTS DefaiteV2;
+CREATE TRIGGER DefaiteV2
+AFTER UPDATE ON COMBAT
+BEGIN
+   UPDATE JOUEUR
+   SET ArgentJoueur = 666
+   WHERE (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'A' AND PVactuels = 0) = (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'A');
+END;
+
+DROP TRIGGER IF EXISTS FinDeCombat;
+CREATE TRIGGER FinDeCombat
+AFTER UPDATE ON JOUEUR
+BEGIN
+   DELETE FROM COMBAT;
+END;
+ 
 /* ========================= FIN TRIGGERS ========================= */
 
 /* ========================= DEBUT VUES ========================= */
@@ -343,20 +367,6 @@ INSERT INTO PersoPossede VALUES
 	
 /* ===================== COMMANDES A RENTRER POUR JOUER : =====================
 
-=== Début de combat v1 ===
-
-UPDATE ENTITE
-SET PVactuels = PVMax
-WHERE Nom IN (
-	SELECT Nom
-	FROM ENTITE
-	WHERE LettreType = 'M'
-	ORDER BY RANDOM()
-	LIMIT 1); 
-
-Prend un monstre aléatoire et lui assigne la valeur de PVMax dans PVactuels, ce qui commence le combat. Le combat est géré par une vue qui n'affiche que les monstres et alliés ayant
-des pv actuels supérieurs à 0.
-
 === Début de combat v2 ===
 
 INSERT INTO COMBAT
@@ -369,19 +379,19 @@ LIMIT 1;
 === Achat de perso ===
 
 INSERT INTO PersoPossede VALUES
-	("Player","Igor");
+	("Player","[Nom du perso]");
 	
 	
 === Voir stats de perso ===
 
 SELECT * FROM ENTITE
-WHERE Nom = [Nom du perso];
+WHERE Nom = "[Nom du perso]";
 
 
 === Voir argent du joueur ===
 
 SELECT ArgentJoueur FROM JOUEUR
-WHERE NomJoueur = [Nom du joueur];
+WHERE NomJoueur = "[Nom du joueur]";
 
 === Choisir une attaque ===
 
