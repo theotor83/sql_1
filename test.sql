@@ -275,7 +275,7 @@ AFTER UPDATE ON ChoixSkill
 WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
 BEGIN
 	UPDATE COMBAT
-	SET PVactuels = PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + (SELECT Defense FROM COMBAT WHERE LettreType = 'M')
+	SET PVactuels = ROUND(PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3))
 	WHERE LettreType = 'M';
 END;
 
@@ -285,7 +285,7 @@ AFTER INSERT ON ChoixSkill
 WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
 BEGIN
 	UPDATE COMBAT
-	SET PVactuels = PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + (SELECT Defense FROM COMBAT WHERE LettreType = 'M')
+	SET PVactuels = ROUND(PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3))
 	WHERE LettreType = 'M';
 END;
 	
