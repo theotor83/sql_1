@@ -102,6 +102,7 @@ DROP TRIGGER IF EXISTS AchatObjetRefuse;
 CREATE TRIGGER AchatObjetRefuse
 BEFORE UPDATE ON ObjetAchete
 WHEN (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = NEW.NomJoueur) < ((SELECT CoutObjet FROM OBJET WHERE NomObjet = NEW.NomObjet) * (NEW.qte - OLD.qte))
+OR (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = NEW.NomJoueur) IS NULL
 BEGIN
 	SELECT CASE
 		WHEN NEW.qte <> OLD.qte THEN
@@ -134,6 +135,7 @@ DROP TRIGGER IF EXISTS AchatPersoRefuse;
 CREATE TRIGGER AchatPersoRefuse
 BEFORE INSERT ON PersoPossede
 WHEN (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = NEW.NomJoueur) < (SELECT CoutAllie FROM MagazinPerso WHERE NomJoueur = NEW.NomJoueur AND Nom = NEW.Nom)
+OR (SELECT ArgentJoueur FROM JOUEUR WHERE NomJoueur = NEW.NomJoueur) IS NULL
 BEGIN
 	SELECT RAISE(ABORT,"Vous n'avez pas assez d'argent.");
 END;
@@ -249,6 +251,14 @@ BEGIN
    DELETE FROM COMBAT;
 END;
  
+DROP TRIGGER IF EXISTS FinDuJeu;
+CREATE TRIGGER FinDuJeu
+AFTER UPDATE ON JOUEUR
+WHEN (SELECT ArgentJoueur FROM JOUEUR) IS NULL
+BEGIN
+	DELETE FROM PersoPossede;
+END;
+
 /* ========================= FIN TRIGGERS ========================= */
 
 /* ========================= DEBUT VUES ========================= */
@@ -379,7 +389,7 @@ LIMIT 1;
 === Achat de perso ===
 
 INSERT INTO PersoPossede VALUES
-	("Player","[Nom du perso]");
+	("Player","Roseline");
 	
 	
 === Voir stats de perso ===
