@@ -76,6 +76,14 @@ CREATE TABLE ChoixSkill(
 NomJoueur VARCHAR(10) PRIMARY KEY REFERENCES JOUEUR,
 SkillChoisi VARCHAR(10));
 
+DROP TABLE IF EXISTS COMBAT;
+CREATE TABLE COMBAT(
+Nom VARCHAR(10) PRIMARY KEY REFERENCES ENTITE,
+PVactuels INTEGER,
+Attaque INTEGER,
+Defense INTEGER,
+LettreType CHAR(1) CHECK (LettreType IN ('M', 'A')));
+
 /* ========================= DEBUT TRIGGERS ========================= */
 
 DROP TRIGGER if EXISTS AchatObjet;
@@ -134,6 +142,20 @@ END;
 /* Le trigger en haut permet de débuter un combat, en assignant les PV Max en valeur de PV actuels pour chaque allié que le joueur possède, dès que un monstre a PV Max = PV actuels. (tout en bas)
 Je sais pas si ça peut créer des problèmes ensuite, je suppose que oui mais on verra ça plus tard avec les combats. Normalement si le joueur attaque directement y a pas de problème.*/
 
+
+DROP TRIGGER IF EXISTS DebutCombatV2;
+CREATE TRIGGER DebutCombatV2
+AFTER INSERT ON COMBAT
+WHEN (SELECT COUNT(*) FROM ENTITE WHERE LettreType = 'M') > 0
+BEGIN
+	INSERT INTO COMBAT
+	SELECT Nom, PVMax, Attaque, Defense, LettreType
+	FROM ENTITE
+	WHERE Nom IN(
+		SELECT Nom
+		FROM PersoPossede);
+	END;
+	
 DROP TRIGGER IF EXISTS BoostPV;
 CREATE TRIGGER BoostPV
 BEFORE UPDATE ON ObjetAchete
@@ -164,7 +186,7 @@ AFTER UPDATE ON ObjetAchete
 WHEN NEW.NomObjet = 'Baton' AND NEW.qte != OLD.qte
 BEGIN
  UPDATE ENTITE
- SET AttaqueBase = AttaqueBase + ((SELECT Effet FROM OBJET WHERE NomObjet = 'Baton') * AttaqueBase) * NEW.qte
+ SET Attaque = AttaqueBase + ((SELECT Effet FROM OBJET WHERE NomObjet = 'Baton') * AttaqueBase) * NEW.qte
  WHERE LettreType = 'A';
 END;
 
@@ -321,7 +343,7 @@ INSERT INTO PersoPossede VALUES
 	
 /* ===================== COMMANDES A RENTRER POUR JOUER : =====================
 
-=== Début de combat ===
+=== Début de combat v1 ===
 
 UPDATE ENTITE
 SET PVactuels = PVMax
@@ -335,11 +357,19 @@ WHERE Nom IN (
 Prend un monstre aléatoire et lui assigne la valeur de PVMax dans PVactuels, ce qui commence le combat. Le combat est géré par une vue qui n'affiche que les monstres et alliés ayant
 des pv actuels supérieurs à 0.
 
+=== Début de combat v2 ===
+
+INSERT INTO COMBAT
+SELECT Nom, PVMax, Attaque, Defense, LettreType
+FROM ENTITE
+WHERE LettreType = 'M'
+ORDER BY RANDOM()
+LIMIT 1;
 
 === Achat de perso ===
 
 INSERT INTO PersoPossede VALUES
-	("Player","[Nom du perso voulu]";
+	("Player","Igor");
 	
 	
 === Voir stats de perso ===
