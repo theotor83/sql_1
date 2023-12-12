@@ -159,7 +159,8 @@ BEGIN
 	WHERE Nom IN(
 		SELECT Nom
 		FROM PersoPossede);
-	END;
+	DELETE FROM ChoixSkill;
+END;
 	
 DROP TRIGGER IF EXISTS BoostPV;
 CREATE TRIGGER BoostPV
@@ -249,6 +250,7 @@ CREATE TRIGGER FinDeCombat
 AFTER UPDATE ON JOUEUR
 BEGIN
    DELETE FROM COMBAT;
+   DELETE FROM ChoixSkill;
 END;
  
 DROP TRIGGER IF EXISTS FinDuJeu;
@@ -259,6 +261,34 @@ BEGIN
 	DELETE FROM PersoPossede;
 END;
 
+/*DROP TRIGGER IF EXISTS ActiverSkillUpdate;
+CREATE TRIGGER ActiverSkill
+AFTER UPDATE ON ChoixSkill
+WHEN (SELECT COUNT(*) FROM COMBAT) > 0
+BEGIN
+	UPDATE FROM COMBAT
+	*/
+
+DROP TRIGGER IF EXISTS ActiverSkillOffensifUpdate;
+CREATE TRIGGER ActiverSkillOffensifUpdate
+AFTER UPDATE ON ChoixSkill
+WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
+BEGIN
+	UPDATE COMBAT
+	SET PVactuels = PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + (SELECT Defense FROM COMBAT WHERE LettreType = 'M')
+	WHERE LettreType = 'M';
+END;
+
+DROP TRIGGER IF EXISTS ActiverSkillOffensifInsert;
+CREATE TRIGGER ActiverSkillOffensifInsert
+AFTER INSERT ON ChoixSkill
+WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
+BEGIN
+	UPDATE COMBAT
+	SET PVactuels = PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + (SELECT Defense FROM COMBAT WHERE LettreType = 'M')
+	WHERE LettreType = 'M';
+END;
+	
 /* ========================= FIN TRIGGERS ========================= */
 
 /* ========================= DEBUT VUES ========================= */
@@ -386,6 +416,8 @@ WHERE LettreType = 'M'
 ORDER BY RANDOM()
 LIMIT 1;
 
+SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2
+
 === Achat de perso ===
 
 INSERT INTO PersoPossede VALUES
@@ -406,6 +438,6 @@ WHERE NomJoueur = "[Nom du joueur]";
 === Choisir une attaque ===
 
 INSERT INTO ChoixSkill(NomJoueur, SkillChoisi) 
-VALUES ("[Nom du joueur]", "[Nom du skill]")
-ON CONFLICT(NomJoueur) DO UPDATE SET SkillChoisi = "[Nom du skill]";
+VALUES ("Player", "Attaque Basique")
+ON CONFLICT(NomJoueur) DO UPDATE SET SkillChoisi = "Attaque Basique";
 */
