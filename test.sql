@@ -275,7 +275,8 @@ AFTER UPDATE ON ChoixSkill
 WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
 BEGIN
 	UPDATE COMBAT
-	SET PVactuels = ROUND(PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3))
+	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))) 
+	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))*(SELECT(( RANDOM() / 9223372036854775808.0) + 4) /4)) /*Ce random vaut entre 0.75 et 1.25*/
 	WHERE LettreType = 'M';
 END;
 
@@ -285,7 +286,8 @@ AFTER INSERT ON ChoixSkill
 WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
 BEGIN
 	UPDATE COMBAT
-	SET PVactuels = ROUND(PVactuels - (((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2)) + ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3))
+	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))) 
+	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 4) /4)) /*Ce random vaut entre 0.75 et 1.25*/
 	WHERE LettreType = 'M';
 END;
 	
@@ -416,7 +418,7 @@ WHERE LettreType = 'M'
 ORDER BY RANDOM()
 LIMIT 1;
 
-SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2
+SELECT ((RANDOM() / 9223372036854775808.0) + 4) /4
 
 === Achat de perso ===
 
@@ -428,8 +430,7 @@ INSERT INTO PersoPossede VALUES
 
 SELECT * FROM ENTITE
 WHERE Nom = "[Nom du perso]";
-
-
+ 
 === Voir argent du joueur ===
 
 SELECT ArgentJoueur FROM JOUEUR
