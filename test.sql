@@ -250,7 +250,7 @@ BEGIN
 	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) 											--1.0 ou 1.1 ou 1.2
 	* (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))) 																--35+...
 	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))	--MIN(35+...,(DefenseAdverse/3))
-	*(SELECT(( RANDOM() / 9223372036854775808.0) + 4) /4)) 																							--Ce random vaut entre 0.75 et 1.25						
+	*(SELECT(( RANDOM() / 9223372036854775808.0) + 5) /5)) 																							--Ce random vaut entre 0.8 et 1.2						
 	WHERE LettreType = 'M';
 END;
 
@@ -263,7 +263,7 @@ BEGIN
 	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) 											--1.0 ou 1.1 ou 1.2
 	* (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))) 																--35+...
 	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))	--MIN(35+...,(DefenseAdverse/3))
-	*(SELECT ((RANDOM() / 9223372036854775808.0) + 4) /4)) 																							--Ce random vaut entre 0.75 et 1.25
+	*(SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5)) 																							--Ce random vaut entre 0.8 et 1.2
 	WHERE LettreType = 'M';
 END;
 
@@ -277,7 +277,7 @@ BEGIN
 	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill IN (SELECT NomSkill FROM SkillEntite WHERE Nom IN (SELECT Nom FROM COMBAT WHERE LettreType = 'M') ORDER BY RANDOM() LIMIT 1))
 	* (SELECT SUM(Attaque) FROM COMBAT WHERE LettreType = 'M'))) 																
 	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE LettreType = 'M'), ((SELECT Defense FROM COMBAT WHERE LettreType = 'A')/3)))	
-	*(SELECT ((RANDOM() / 9223372036854775808.0) + 4) /4)) 																							
+	*(SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5)) 																							
 	WHERE LettreType = 'A';
 END;
 	
@@ -459,8 +459,6 @@ FROM ENTITE
 WHERE LettreType = 'M'
 ORDER BY RANDOM()
 LIMIT 1;
-
-SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2
 
 === Achat de perso ===
 
