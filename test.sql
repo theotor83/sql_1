@@ -231,6 +231,7 @@ DROP TRIGGER IF EXISTS VictoireV2;
 CREATE TRIGGER VictoireV2
 AFTER UPDATE ON COMBAT
 BEGIN
+	SELECT RAISE(ABORT,"Ouais");
    UPDATE JOUEUR
    SET ArgentJoueur = ArgentJoueur + (SELECT ArgentDrop FROM Monstre WHERE Nom = NEW.Nom)
    WHERE (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'M' AND PVactuels = 0) = (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'M');
@@ -240,6 +241,7 @@ DROP TRIGGER IF EXISTS DefaiteV2;
 CREATE TRIGGER DefaiteV2
 AFTER UPDATE ON COMBAT
 BEGIN
+	SELECT RAISE(ABORT,"Nan");
    UPDATE JOUEUR
    SET ArgentJoueur = 666
    WHERE (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'A' AND PVactuels = 0) = (SELECT COUNT(*) FROM COMBAT WHERE LettreType = 'A');
@@ -291,6 +293,16 @@ BEGIN
 	WHERE LettreType = 'M';
 END;
 	
+DROP TRIGGER IF EXISTS CheckPVNegatif;
+CREATE TRIGGER CheckPVNegatif
+AFTER UPDATE ON COMBAT
+WHEN (SELECT COUNT(*) PVactuels FROM COMBAT WHERE PVactuels < 0) > 0
+BEGIN
+	UPDATE COMBAT
+	SET PVactuels = 0
+	WHERE PVactuels < 0;
+END;
+
 /* ========================= FIN TRIGGERS ========================= */
 
 /* ========================= DEBUT VUES ========================= */
@@ -418,7 +430,7 @@ WHERE LettreType = 'M'
 ORDER BY RANDOM()
 LIMIT 1;
 
-SELECT ((RANDOM() / 9223372036854775808.0) + 4) /4
+SELECT ((RANDOM() / 9223372036854775808.0) + 1.5) /2
 
 === Achat de perso ===
 
