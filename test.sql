@@ -73,8 +73,8 @@ FOREIGN KEY (Nom) REFERENCES ENTITE(Nom));
 
 DROP TABLE IF EXISTS ChoixSkill;
 CREATE TABLE ChoixSkill(
-NomJoueur VARCHAR(10) PRIMARY KEY REFERENCES JOUEUR,
-SkillChoisi VARCHAR(10));
+SkillChoisi VARCHAR(10) UNIQUE REFERENCES Skill(NomSkill)
+);
 
 DROP TABLE IF EXISTS COMBAT;
 CREATE TABLE COMBAT(
@@ -465,7 +465,7 @@ WHERE NomJoueur = "[Nom du joueur]";
 
 === Choisir une attaque ===
 
-INSERT INTO ChoixSkill(NomJoueur, SkillChoisi) 
-VALUES ("Player", "Attaque Basique")
-ON CONFLICT(NomJoueur) DO UPDATE SET SkillChoisi = "Attaque Basique";
+DELETE FROM ChoixSkill;
+INSERT INTO ChoixSkill(SkillChoisi) 
+VALUES ("Attaque Basique");
 */
