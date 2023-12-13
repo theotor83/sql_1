@@ -15,7 +15,6 @@ CREATE TABLE ENTITE(
 Nom VARCHAR(10) PRIMARY KEY,
 PVmax INTEGER,
 PVmaxbase INTEGER,
-PVactuels INTEGER,
 Attaque INTEGER,
 Attaquebase INTEGER,
 Defense INTEGER,
@@ -325,6 +324,15 @@ BEGIN
 	SET ArgentJoueur = NULL;
 END;
 
+DROP TRIGGER IF EXISTS CheckPVMax;
+CREATE TRIGGER CheckPVMax
+AFTER UPDATE ON COMBAT
+BEGIN
+   UPDATE COMBAT
+   SET PVactuels = (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom)
+   WHERE PVactuels > (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom);
+END;
+
 /* ========================= FIN TRIGGERS ========================= */
 
 /* ========================= DEBUT VUES ========================= */
@@ -370,19 +378,19 @@ INSERT INTO OBJET VALUES
 ('Baton', 'Augmente_Atk', 0.2, 350);
 
 INSERT INTO ENTITE VALUES
-    ("Bertrand", 200, 200, 0, 35, 35, 20, 20, 'A'),
-    ("Roseline", 150, 150, 0, 45, 45, 15, 15, 'A'),
-    ("Igor", 350, 350, 0, 20, 20, 45, 45, 'A'),
-    ("Giselle", 400, 400, 0, 50, 50, 50, 50, 'A'),
+    ("Bertrand", 200, 200, 35, 35, 20, 20, 'A'),
+    ("Roseline", 150, 150, 45, 45, 15, 15, 'A'),
+    ("Igor", 350, 350, 20, 20, 45, 45, 'A'),
+    ("Giselle", 400, 400, 50, 50, 50, 50, 'A'),
     
-    ("Loup", 100, 100, 0, 30, 30, 5, 5, 'M'),
-    ("Ogre", 200, 200, 0, 40, 40, 15, 15, 'M'),
-    ("Gobelin", 70, 70, 0, 55, 55, 3, 3, 'M'),
-    ("Blob", 50, 50, 0, 10, 10, 0, 0, 'M'),
-    ("Ours", 150, 150, 0, 50, 50, 20, 20, 'M'),
-    ("Sirene", 100, 100, 0, 50, 50, 10, 10, 'M'),
-    ("Dragon", 400, 400, 0, 250, 250, 90, 90, 'M'),
-    ("Cyclope", 250, 250, 0, 100, 100, 70, 70, 'M');
+    ("Loup", 100, 100, 30, 30, 5, 5, 'M'),
+    ("Ogre", 200, 200, 40, 40, 15, 15, 'M'),
+    ("Gobelin", 70, 70, 55, 55, 3, 3, 'M'),
+    ("Blob", 50, 50, 10, 10, 0, 0, 'M'),
+    ("Ours", 150, 150, 50, 50, 20, 20, 'M'),
+    ("Sirene", 100, 100, 50, 50, 10, 10, 'M'),
+    ("Dragon", 400, 400, 250, 250, 90, 90, 'M'),
+    ("Cyclope", 250, 250, 100, 100, 70, 70, 'M');
 
 INSERT INTO JOUEUR VALUES
     ("Player", 10000000000);
