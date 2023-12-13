@@ -263,6 +263,17 @@ BEGIN
 	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))*(SELECT ((RANDOM() / 9223372036854775808.0) + 4) /4)) /*Ce random vaut entre 0.75 et 1.25*/
 	WHERE LettreType = 'M';
 END;
+
+DROP TRIGGER IF EXISTS ContreAttaqueEnnemi;
+CREATE TRIGGER ContreAttaqueEnnemi
+AFTER UPDATE OF PVactuels ON COMBAT
+FOR EACH ROW
+WHEN new.LettreType = 'M'
+BEGIN
+ UPDATE COMBAT
+ SET PVactuels = PVactuels - NEW.Attaque + Defense
+ WHERE LettreType = 'A';
+END;
 	
 DROP TRIGGER IF EXISTS CheckPVNegatif;
 CREATE TRIGGER CheckPVNegatif
