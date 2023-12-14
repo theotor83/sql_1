@@ -267,6 +267,19 @@ BEGIN
 	WHERE LettreType = 'M';
 END;
 
+DROP TRIGGER IF EXISTS ActiverSkillSoin;
+CREATE TRIGGER ActiverSkillSoin
+AFTER INSERT ON ChoixSkill
+WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Soin")
+BEGIN
+	UPDATE COMBAT
+	SET PVactuels = PVactuels + ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi))
+	WHERE LettreType = 'A';
+	UPDATE COMBAT
+	SET PVactuels = PVactuels + 0
+	WHERE LettreType = 'M';
+END;
+
 DROP TRIGGER IF EXISTS ContreAttaqueEnnemi;
 CREATE TRIGGER ContreAttaqueEnnemi
 AFTER UPDATE OF PVactuels ON COMBAT
@@ -327,10 +340,11 @@ END;
 DROP TRIGGER IF EXISTS CheckPVMax;
 CREATE TRIGGER CheckPVMax
 AFTER UPDATE ON COMBAT
+FOR EACH ROW
 BEGIN
-   UPDATE COMBAT
-   SET PVactuels = (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom)
-   WHERE PVactuels > (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom);
+	UPDATE COMBAT
+	SET PVactuels = (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom)
+	WHERE PVactuels > (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom) AND Nom = NEW.Nom;
 END;
 
 /* ========================= FIN TRIGGERS ========================= */
@@ -463,7 +477,7 @@ LIMIT 1;
 === Achat de perso ===
 
 INSERT INTO PersoPossede VALUES
-	("Player","Roseline");
+	("Player","Giselle");
 	
 	
 === Voir stats de perso ===
@@ -480,5 +494,8 @@ WHERE NomJoueur = "[Nom du joueur]";
 
 DELETE FROM ChoixSkill;
 INSERT INTO ChoixSkill(SkillChoisi) 
-VALUES ("Attaque Basique");
+VALUES ("Soin");
+
+
+
 */
