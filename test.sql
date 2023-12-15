@@ -13,11 +13,8 @@ CoutObjet INTEGER) ;
 DROP TABLE IF EXISTS ENTITE;
 CREATE TABLE ENTITE(
 Nom VARCHAR(10) PRIMARY KEY,
-PVmax INTEGER,
 PVmaxbase INTEGER,
-Attaque INTEGER,
 Attaquebase INTEGER,
-Defense INTEGER,
 Defensebase INTEGER,
 LettreType CHAR(1) CHECK (LettreType IN ('M', 'A')));
 
@@ -153,7 +150,7 @@ AFTER INSERT ON COMBAT
 WHEN (SELECT COUNT(*) FROM ENTITE WHERE LettreType = 'M') > 0
 BEGIN
 	INSERT INTO COMBAT
-	SELECT Nom, PVMax, Attaque, Defense, LettreType
+	SELECT Nom, PVMaxbase, Attaquebase, Defensebase, LettreType
 	FROM ENTITE
 	WHERE Nom IN(
 		SELECT Nom
@@ -164,6 +161,7 @@ END;
 DROP TRIGGER IF EXISTS BoostStats;
 CREATE TRIGGER BoostStats
 AFTER INSERT ON COMBAT
+FOR EACH ROW
 WHEN NEW.LettreType = 'A'
 BEGIN
 	UPDATE COMBAT
@@ -171,19 +169,19 @@ BEGIN
 				 ((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Vie') * 
 				 (SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) * 
 				 (SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Vie')))
-	WHERE LettreType = 'A';
+	WHERE LettreType = 'A' AND Nom = NEW.Nom;
 	UPDATE COMBAT
 	SET Defense = (SELECT Defensebase FROM ENTITE WHERE Nom = NEW.Nom) + 
 				 ((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Def') * 
 				 (SELECT Defensebase FROM ENTITE WHERE Nom = NEW.Nom) * 
 				 (SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Def')))
-	WHERE LettreType = 'A';
+	WHERE LettreType = 'A' AND Nom = NEW.Nom;
 	UPDATE COMBAT
 	SET Attaque = (SELECT Attaquebase FROM ENTITE WHERE Nom = NEW.Nom) + 
 					((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Atk') * 
 					(SELECT Attaquebase FROM ENTITE WHERE Nom = NEW.Nom) * 
 					(SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Atk')))
-	WHERE LettreType = 'A';
+	WHERE LettreType = 'A' AND Nom = NEW.Nom;
 END;
 
 /*DROP TRIGGER IF EXISTS BoostPV;
@@ -396,9 +394,9 @@ SELECT SkillEntite.Nom, SkillEntite.NomSkill
 FROM SkillEntite, PersoPossede
 WHERE PersoPossede.Nom = SkillEntite.Nom;
 
-DROP VIEW IF EXISTS StatsEquipe;
-CREATE VIEW StatsEquipe AS
-SELECT ENTITE.Nom, ENTITE.PVMax, ENTITE.Attaque, ENTITE.Defense
+DROP VIEW IF EXISTS StatsEquipeOBSOLETE;
+CREATE VIEW StatsEquipeOBSOLETE AS
+SELECT ENTITE.Nom, ENTITE.PVMaxbase, ENTITE.Attaquebase, ENTITE.Defensebase
 FROM ENTITE, PersoPossede
 WHERE PersoPossede.Nom = ENTITE.Nom;
 
@@ -418,19 +416,19 @@ INSERT INTO OBJET VALUES
 ('Baton', 'Augmente_Atk', 0.2, 350);
 
 INSERT INTO ENTITE VALUES
-    ("Bertrand", 200, 200, 35, 35, 20, 20, 'A'),
-    ("Roseline", 150, 150, 45, 45, 15, 15, 'A'),
-    ("Igor", 350, 350, 20, 20, 45, 45, 'A'),
-    ("Giselle", 400, 400, 50, 50, 50, 50, 'A'),
+    ("Bertrand", 200, 35, 20, 'A'),
+    ("Roseline", 150, 45, 15, 'A'),
+    ("Igor", 350, 20, 45, 'A'),
+    ("Giselle", 400, 50, 50, 'A'),
     
-    ("Loup", 100, 100, 30, 30, 5, 5, 'M'),
-    ("Ogre", 200, 200, 40, 40, 15, 15, 'M'),
-    ("Gobelin", 70, 70, 55, 55, 3, 3, 'M'),
-    ("Blob", 50, 50, 10, 10, 0, 0, 'M'),
-    ("Ours", 150, 150, 50, 50, 20, 20, 'M'),
-    ("Sirene", 100, 100, 50, 50, 10, 10, 'M'),
-    ("Dragon", 400, 400, 250, 250, 90, 90, 'M'),
-    ("Cyclope", 250, 250, 100, 100, 70, 70, 'M');
+    ("Loup", 100, 30, 5, 'M'),
+    ("Ogre", 200, 40, 15, 'M'),
+    ("Gobelin", 70, 55, 3, 'M'),
+    ("Blob", 50, 10, 0, 'M'),
+    ("Ours", 150, 50, 20, 'M'),
+    ("Sirene", 100, 50, 10, 'M'),
+    ("Dragon", 400, 250, 90, 'M'),
+    ("Cyclope", 250, 100, 70, 'M');
 
 INSERT INTO JOUEUR VALUES
     ("Player", 10000000000);
@@ -493,8 +491,8 @@ INSERT INTO PersoPossede VALUES
 
 === Début de combat v2 ===
 
-INSERT INTO COMBAT
-SELECT Nom, PVMax, Attaque, Defense, LettreType
+INSERT INTO COMBAT 
+SELECT *
 FROM ENTITE
 WHERE LettreType = 'M'
 ORDER BY RANDOM()
@@ -503,13 +501,13 @@ LIMIT 1;
 === Achat de perso ===
 
 INSERT INTO PersoPossede VALUES
-	("Player","Giselle");
+	("Player","Roseline");
 	
 	
 === Voir stats de perso ===
 
 SELECT * FROM ENTITE
-WHERE Nom = "[Nom du perso]";
+WHERE Nom = "Igor";
  
 === Voir argent du joueur ===
 
@@ -520,7 +518,7 @@ WHERE NomJoueur = "[Nom du joueur]";
 
 DELETE FROM ChoixSkill;
 INSERT INTO ChoixSkill(SkillChoisi) 
-VALUES ("Soin");
+VALUES ("Attaque Basique");
 
 
 
