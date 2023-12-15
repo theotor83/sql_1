@@ -160,42 +160,61 @@ BEGIN
 		FROM PersoPossede);
 	DELETE FROM ChoixSkill;
 END;
-	
-DROP TRIGGER IF EXISTS BoostPV;
-CREATE TRIGGER BoostPV
-BEFORE UPDATE ON ObjetAchete
-WHEN NEW.NomObjet = 'Talisman' AND NEW.qte != OLD.qte
+
+DROP TRIGGER IF EXISTS BoostStats;
+CREATE TRIGGER BoostStats
+AFTER INSERT ON COMBAT
+WHEN NEW.LettreType = 'A'
 BEGIN
- UPDATE ENTITE
- SET PVMax = PVmaxbase + ((SELECT Effet FROM OBJET WHERE NomObjet = 'Talisman') * PVMaxBase) * NEW.qte
- WHERE LettreType = 'A';
+	UPDATE COMBAT
+	SET PVactuels = (SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) + 
+				 ((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Vie') * 
+				 (SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) * 
+				 (SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Vie')))
+	WHERE LettreType = 'A';
+	UPDATE COMBAT
+	SET Defense = (SELECT Defensebase FROM ENTITE WHERE Nom = NEW.Nom) + 
+				 ((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Def') * 
+				 (SELECT Defensebase FROM ENTITE WHERE Nom = NEW.Nom) * 
+				 (SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Def')))
+	WHERE LettreType = 'A';
+	UPDATE COMBAT
+	SET Attaque = (SELECT Attaquebase FROM ENTITE WHERE Nom = NEW.Nom) + 
+					((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Atk') * 
+					(SELECT Attaquebase FROM ENTITE WHERE Nom = NEW.Nom) * 
+					(SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Atk')))
+	WHERE LettreType = 'A';
 END;
 
-/*A changer : faire en sorte que la vérification soit TypeObjet = Augmente_Vie, mais j'ai la flemme de faire ça. Actuellement ça marche donc c'est pas grave.*/
+/*DROP TRIGGER IF EXISTS BoostPV;
+CREATE TRIGGER BoostStats
+BEFORE UPDATE ON ObjetAchete
+WHEN NEW.TypeObjet = 'Augmente_Vie' AND NEW.qte != OLD.qte
+BEGIN
+ UPDATE ENTITE
+ SET PVMax = PVmaxbase + ((SELECT Effet FROM OBJET WHERE NomObjet = NEW.NomObjet) * PVMaxBase) * NEW.qte
+ WHERE LettreType = 'A';
+END;
 
 DROP TRIGGER IF EXISTS BoostDEF;
 CREATE TRIGGER BoostDEF
 AFTER UPDATE ON ObjetAchete
-WHEN NEW.NomObjet = 'Amulette' AND NEW.qte != OLD.qte
+WHEN NEW.TypeObjet = 'Augmente_Def' AND NEW.qte != OLD.qte
 BEGIN
  UPDATE ENTITE
- SET Defense = DefenseBase + ((SELECT Effet FROM OBJET WHERE NomObjet = 'Amulette') * DefenseBase) * NEW.qte
+ SET Defense = DefenseBase + ((SELECT Effet FROM OBJET WHERE NomObjet = NEW.NomObjet) * DefenseBase) * NEW.qte
  WHERE LettreType = 'A';
 END;
-
-/*A changer : faire en sorte que la vérification soit TypeObjet = Augmente_Def, mais j'ai la flemme de faire ça. Actuellement ça marche donc c'est pas grave.*/
 
 DROP TRIGGER IF EXISTS BoostATK;
 CREATE TRIGGER BoostATK
 AFTER UPDATE ON ObjetAchete
-WHEN NEW.NomObjet = 'Baton' AND NEW.qte != OLD.qte
+WHEN NEW.TypeObjet = 'Augmente_Atk' AND NEW.qte != OLD.qte
 BEGIN
  UPDATE ENTITE
- SET Attaque = AttaqueBase + ((SELECT Effet FROM OBJET WHERE NomObjet = 'Baton') * AttaqueBase) * NEW.qte
+ SET Attaque = AttaqueBase + ((SELECT Effet FROM OBJET WHERE NomObjet = NEW.NomObjet) * AttaqueBase) * NEW.qte
  WHERE LettreType = 'A';
-END;
-
-/*A changer : faire en sorte que la vérification soit TypeObjet = Augmente_Atk, mais j'ai la flemme de faire ça. Actuellement ça marche donc c'est pas grave.*/
+END;*/
 
 DROP TRIGGER IF EXISTS CheckSkillInsert;
 CREATE TRIGGER CheckSkillInsert
@@ -343,8 +362,15 @@ AFTER UPDATE ON COMBAT
 FOR EACH ROW
 BEGIN
 	UPDATE COMBAT
-	SET PVactuels = (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom)
-	WHERE PVactuels > (SELECT PVMax FROM ENTITE WHERE Nom = NEW.Nom) AND Nom = NEW.Nom;
+	SET PVactuels = ((SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) + 
+				 ((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Vie') * 
+				 (SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) * 
+				 (SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Vie'))))
+	WHERE PVactuels > ((SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) + 
+				 ((SELECT Effet FROM OBJET WHERE TypeObjet = 'Augmente_Vie') * 
+				 (SELECT PVMaxbase FROM ENTITE WHERE Nom = NEW.Nom) * 
+				 (SELECT qte FROM ObjetAchete WHERE NomObjet IN (SELECT NomObjet FROM OBJET WHERE TypeObjet = 'Augmente_Vie'))))
+	AND Nom = NEW.Nom;
 END;
 
 /* ========================= FIN TRIGGERS ========================= */
