@@ -184,53 +184,9 @@ BEGIN
 	WHERE LettreType = 'A' AND Nom = NEW.Nom;
 END;
 
-/*DROP TRIGGER IF EXISTS BoostPV;
-CREATE TRIGGER BoostStats
-BEFORE UPDATE ON ObjetAchete
-WHEN NEW.TypeObjet = 'Augmente_Vie' AND NEW.qte != OLD.qte
-BEGIN
- UPDATE ENTITE
- SET PVMax = PVmaxbase + ((SELECT Effet FROM OBJET WHERE NomObjet = NEW.NomObjet) * PVMaxBase) * NEW.qte
- WHERE LettreType = 'A';
-END;
-
-DROP TRIGGER IF EXISTS BoostDEF;
-CREATE TRIGGER BoostDEF
-AFTER UPDATE ON ObjetAchete
-WHEN NEW.TypeObjet = 'Augmente_Def' AND NEW.qte != OLD.qte
-BEGIN
- UPDATE ENTITE
- SET Defense = DefenseBase + ((SELECT Effet FROM OBJET WHERE NomObjet = NEW.NomObjet) * DefenseBase) * NEW.qte
- WHERE LettreType = 'A';
-END;
-
-DROP TRIGGER IF EXISTS BoostATK;
-CREATE TRIGGER BoostATK
-AFTER UPDATE ON ObjetAchete
-WHEN NEW.TypeObjet = 'Augmente_Atk' AND NEW.qte != OLD.qte
-BEGIN
- UPDATE ENTITE
- SET Attaque = AttaqueBase + ((SELECT Effet FROM OBJET WHERE NomObjet = NEW.NomObjet) * AttaqueBase) * NEW.qte
- WHERE LettreType = 'A';
-END;*/
-
-DROP TRIGGER IF EXISTS CheckSkillInsert;
-CREATE TRIGGER CheckSkillInsert
+DROP TRIGGER IF EXISTS CheckSkill;
+CREATE TRIGGER CheckSkill
 BEFORE INSERT ON ChoixSkill
-BEGIN
-    SELECT CASE
-        WHEN NEW.SkillChoisi NOT IN (
-            SELECT SkillEntite.NomSkill
-            FROM SkillEntite, PersoPossede
-            WHERE PersoPossede.Nom = SkillEntite.Nom
-        ) THEN
-            RAISE(ABORT, "Ce skill n'est pas disponible.")
-    END;
-END;
-
-DROP TRIGGER IF EXISTS CheckSkillUpdate;
-CREATE TRIGGER CheckSkillUpdate
-BEFORE UPDATE ON ChoixSkill
 BEGIN
     SELECT CASE
         WHEN NEW.SkillChoisi NOT IN (
@@ -258,28 +214,15 @@ BEGIN
 	DELETE FROM PersoPossede;
 END;
 
-DROP TRIGGER IF EXISTS ActiverSkillOffensifUpdate;
-CREATE TRIGGER ActiverSkillOffensifUpdate
-AFTER UPDATE ON ChoixSkill
-WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
-BEGIN
-	UPDATE COMBAT
-	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) 											--1.0 ou 1.1 ou 1.2
-	* (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))) 																--35+...
-	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))	--MIN(35+...,(DefenseAdverse/3))
-	*(SELECT(( RANDOM() / 9223372036854775808.0) + 5) /5)) 																							--Ce random vaut entre 0.8 et 1.2						
-	WHERE LettreType = 'M';
-END;
-
-DROP TRIGGER IF EXISTS ActiverSkillOffensifInsert;
-CREATE TRIGGER ActiverSkillOffensifInsert
+DROP TRIGGER IF EXISTS ActiverSkillOffensif;
+CREATE TRIGGER ActiverSkillOffensif
 AFTER INSERT ON ChoixSkill
 WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Offensif")
 BEGIN
 	UPDATE COMBAT
 	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) 											--1.0 ou 1.1 ou 1.2
 	* (SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)))) 																--35+...
-	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/3)))	--MIN(35+...,(DefenseAdverse/3))
+	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE Nom IN (SELECT Nom FROM PersoPossede)), ((SELECT Defense FROM COMBAT WHERE LettreType = 'M')/2)))	--MIN(35+...,(DefenseAdverse/2))
 	*(SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5)) 																							--Ce random vaut entre 0.8 et 1.2
 	WHERE LettreType = 'M';
 END;
@@ -290,10 +233,10 @@ AFTER INSERT ON ChoixSkill
 WHEN (SELECT COUNT(*) FROM COMBAT) > 0 AND NEW.SkillChoisi IN (SELECT NomSkill FROM SKILL WHERE TypeSkill = "Soin")
 BEGIN
 	UPDATE COMBAT
-	SET PVactuels = PVactuels + ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi))
+	SET PVactuels = ROUND(PVactuels + (ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5)))*1.5)
 	WHERE LettreType = 'A';
 	UPDATE COMBAT
-	SET PVactuels = PVactuels + 0
+	SET PVactuels = ROUND(PVactuels + (ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) - 20)/5) * (SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5))
 	WHERE LettreType = 'M';
 END;
 
@@ -306,7 +249,7 @@ BEGIN
 	UPDATE COMBAT
 	SET PVactuels = ROUND(PVactuels - ((((SELECT EffetSkill FROM SKILL WHERE NomSkill IN (SELECT NomSkill FROM SkillEntite WHERE Nom IN (SELECT Nom FROM COMBAT WHERE LettreType = 'M') ORDER BY RANDOM() LIMIT 1))
 	* (SELECT SUM(Attaque) FROM COMBAT WHERE LettreType = 'M'))) 																
-	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE LettreType = 'M'), ((SELECT Defense FROM COMBAT WHERE LettreType = 'A')/3)))	
+	- MIN((SELECT SUM(Attaque) FROM COMBAT WHERE LettreType = 'M'), ((SELECT Defense FROM COMBAT WHERE LettreType = 'A')/2)))	
 	*(SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5)) 																							
 	WHERE LettreType = 'A';
 END;
@@ -518,7 +461,7 @@ WHERE NomJoueur = "[Nom du joueur]";
 
 DELETE FROM ChoixSkill;
 INSERT INTO ChoixSkill(SkillChoisi) 
-VALUES ("Attaque Basique");
+VALUES ("Grand Soin");
 
 
 
