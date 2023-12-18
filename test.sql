@@ -18,8 +18,6 @@ Attaquebase INTEGER,
 Defensebase INTEGER,
 LettreType CHAR(1) CHECK (LettreType IN ('M', 'A')));
 
-/*L'horreur en haut avec les colonnes "base", c'est pour calculer les boosts de stats grâce aux objets. Sans ça, les pourcentages marchent mal et sont inconsistants.*/
-
 DROP TABLE IF EXISTS SKILL;
 CREATE TABLE SKILL (
 NomSkill VARCHAR(10) PRIMARY KEY,
@@ -318,27 +316,20 @@ END;
 
 /* ========================= DEBUT VUES ========================= */
 
-DROP VIEW IF EXISTS VueCombat;
-CREATE VIEW VueCombat AS
-SELECT Nom, PVactuels
-FROM ENTITE
-WHERE PVactuels > 0;
-
 DROP VIEW IF EXISTS Inventaire;
 CREATE VIEW Inventaire("Nom objet", "Quantité", "Type", "Boost (en %)") AS
 SELECT ObjetAchete.NomObjet, ObjetAchete.qte, OBJET.TypeObjet, OBJET.Effet * ObjetAchete.qte * 100
 FROM ObjetAchete, OBJET
-WHERE ObjetAchete.NomObjet = OBJET.NomObjet
-AND qte > 0;
+WHERE ObjetAchete.NomObjet = OBJET.NomObjet;
 
 DROP VIEW IF EXISTS SkillsUtilisables;
 CREATE VIEW SkillsUtilisables AS
-SELECT SkillEntite.Nom, SkillEntite.NomSkill
+SELECT DISTINCT SkillEntite.NomSkill
 FROM SkillEntite, PersoPossede
 WHERE PersoPossede.Nom = SkillEntite.Nom;
 
-DROP VIEW IF EXISTS StatsEquipeOBSOLETE;
-CREATE VIEW StatsEquipeOBSOLETE AS
+DROP VIEW IF EXISTS StatsEquipeBase;
+CREATE VIEW StatsEquipeBase("Nom", "PV Max brutes", "Attaque brute", "Défense brute") AS
 SELECT ENTITE.Nom, ENTITE.PVMaxbase, ENTITE.Attaquebase, ENTITE.Defensebase
 FROM ENTITE, PersoPossede
 WHERE PersoPossede.Nom = ENTITE.Nom;
@@ -374,7 +365,7 @@ INSERT INTO ENTITE VALUES
     ("Cyclope", 250, 100, 70, 'M');
 
 INSERT INTO JOUEUR VALUES
-    ("Player", 10000000000);
+    ("Player", 100);
 
 INSERT INTO Monstre
 VALUES('Blob',5,1),
@@ -433,7 +424,6 @@ INSERT INTO PersoPossede VALUES
 /* ===================== COMMANDES A RENTRER POUR JOUER : =====================
 
 === Début de combat v2 ===
-
 INSERT INTO COMBAT 
 SELECT *
 FROM ENTITE
@@ -441,28 +431,37 @@ WHERE LettreType = 'M'
 ORDER BY RANDOM()
 LIMIT 1;
 
+=== Choisir une attaque en combat ===
+DELETE FROM ChoixSkill;
+INSERT INTO ChoixSkill(SkillChoisi) 
+VALUES ("[Nom du skill]");
+
 === Achat de perso ===
-
 INSERT INTO PersoPossede VALUES
-	("Player","Roseline");
+	("Player","[Nom du perso]");
 	
-	
+=== Acheter/vendre un objet ===
+UPDATE ObjetAchete
+SET qte = [Nouvelle quantité]
+WHERE NomObjet = "[Nom de l'objet]";
+
 === Voir stats de perso ===
-
 SELECT * FROM ENTITE
-WHERE Nom = "Igor";
+WHERE Nom = "[Nom du perso]";
  
-=== Voir argent du joueur ===
-
+=== Voir argent ===
 SELECT ArgentJoueur FROM JOUEUR
 WHERE NomJoueur = "[Nom du joueur]";
 
-=== Choisir une attaque ===
+=== Voir les persos possédés ===
+SELECT NOM FROM PersoPossede;
 
-DELETE FROM ChoixSkill;
-INSERT INTO ChoixSkill(SkillChoisi) 
-VALUES ("Grand Soin");
+=== Voir skills utilisables ===
+SELECT * FROM SkillsUtilisables;
 
+=== Voir inventaire ===
+SELECT * FROM Inventaire;
 
-
+=== Voir stats brutes de l'équipe ===
+SELECT * FROM StatsEquipe;
 */
