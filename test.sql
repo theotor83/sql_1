@@ -234,7 +234,7 @@ BEGIN
 	SET PVactuels = ROUND(PVactuels + (ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) * (SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5)))*1.5)
 	WHERE LettreType = 'A';
 	UPDATE COMBAT
-	SET PVactuels = ROUND(PVactuels + (ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) - 20)/5) * (SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5))
+	SET PVactuels = ROUND(PVactuels + (ROUND((SELECT EffetSkill FROM SKILL WHERE NomSkill = NEW.SkillChoisi) - 40)/10) * (SELECT ((RANDOM() / 9223372036854775808.0) + 5) /5))
 	WHERE LettreType = 'M';
 END;
 
@@ -340,9 +340,9 @@ INSERT INTO SKILL
 VALUES('Attaque Basique','Offensif',1),
 ('Boule Magique', 'Offensif', 1.2),
 ('Morsure', 'Offensif', 1.1),
-('Soin', 'Soin', 20),
-('Grand Soin', 'Soin', 50),
-('Tres Grand Soin', 'Soin', 100);
+('Soin', 'Soin', 40),
+('Grand Soin', 'Soin', 100),
+('Tres Grand Soin', 'Soin', 200);
 
 INSERT INTO OBJET VALUES
 ('Talisman', 'Augmente_Vie', 0.1, 200), 
